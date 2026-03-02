@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Bell, Check, Clock4 } from "lucide-react";
-import { fetchNotificationsAction, markNotificationReadAction } from "@/app/actions";
+import { fetchNotificationsAction, markNotificationReadAction, markAllNotificationsReadAction } from "@/app/actions";
 import type { Notification } from "@/types";
 
 export function NotificationBell({ userId }: { userId: number }) {
@@ -63,10 +63,27 @@ export function NotificationBell({ userId }: { userId: number }) {
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
+    const handleOpenToggle = async () => {
+        const willOpen = !isOpen;
+        setIsOpen(willOpen);
+
+        if (willOpen && unreadCount > 0) {
+            try {
+                // Optimistically clear the unread UI state right away
+                setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                await markAllNotificationsReadAction(userId);
+            } catch (err) {
+                console.error("Failed to mark all as read:", err);
+                // Re-fetch to restore state if it failed
+                fetchNotifs();
+            }
+        }
+    };
+
     return (
         <div className="relative inline-block text-left" ref={dropdownRef}>
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={handleOpenToggle}
                 className="relative p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
                 title="Notifications"
             >
@@ -82,11 +99,6 @@ export function NotificationBell({ userId }: { userId: number }) {
                 <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto origin-top-right bg-card border border-border rounded-xl shadow-lg z-[100] focus:outline-none flex flex-col">
                     <div className="px-4 py-3 border-b border-border bg-muted/50 rounded-t-xl shrink-0 flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
-                        {unreadCount > 0 && (
-                            <span className="text-xs text-muted">
-                                {unreadCount} unread
-                            </span>
-                        )}
                     </div>
                     <div className="p-2 space-y-1 flex-1 overflow-y-auto">
                         {isLoading && notifications.length === 0 ? (
@@ -109,15 +121,6 @@ export function NotificationBell({ userId }: { userId: number }) {
                                             {new Date(notif.createdAt).toLocaleString()}
                                         </p>
                                     </div>
-                                    {!notif.isRead && (
-                                        <button
-                                            onClick={(e) => handleMarkRead(e, notif.id)}
-                                            className="shrink-0 p-1 rounded hover:bg-background text-emerald-500"
-                                            title="Mark as read"
-                                        >
-                                            <Check className="h-4 w-4" />
-                                        </button>
-                                    )}
                                 </div>
                             ))
                         )}

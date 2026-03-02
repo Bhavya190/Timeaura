@@ -25,6 +25,13 @@ export async function markNotificationRead(id: number): Promise<Notification> {
     return result.rows[0];
 }
 
+export async function markAllNotificationsRead(userId: number): Promise<void> {
+    await pool.query(
+        'UPDATE "Notification" SET "isRead" = true WHERE "userId" = $1 AND "isRead" = false',
+        [userId]
+    );
+}
+
 export async function getAdminUserIds(): Promise<number[]> {
     // Returns IDs of all users with role 'admin' or 'teamLead'
     const result = await pool.query(

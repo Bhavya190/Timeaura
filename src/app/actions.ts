@@ -235,7 +235,7 @@ export async function updateAdminSecurityAction(id: number, data: {
     return await updateEmployeeProfile(id, { password: hashedPassword });
 }
 
-import { getNotifications, addNotification, markNotificationRead, getAdminUserIds } from "@/lib/notifications";
+import { getNotifications, addNotification, markNotificationRead, markAllNotificationsRead, getAdminUserIds } from "@/lib/notifications";
 
 // ... skipping to timesheets ...
 
@@ -299,6 +299,10 @@ export async function fetchNotificationsAction(userId: number) {
 
 export async function markNotificationReadAction(notificationId: number) {
     return await markNotificationRead(notificationId);
+}
+
+export async function markAllNotificationsReadAction(userId: number) {
+    return await markAllNotificationsRead(userId);
 }
 
 // Authentication
