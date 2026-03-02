@@ -356,17 +356,29 @@ export default function AdminTimesheetPage() {
       // Update existing
       if (newHours === 0) {
         const { deleteTaskAction } = await import("@/app/actions");
-        await deleteTaskAction(matching[0].id);
-        setTasks((prev) => prev.filter((t) => t.id !== matching[0].id));
+        for (const m of matching) {
+          await deleteTaskAction(m.id);
+        }
+        setTasks((prev) => prev.filter((t) => !matching.some((m) => m.id === t.id)));
       } else {
         const updated = await updateTaskAction(matching[0].id, {
           workedHours: newHours,
           description: desc,
         });
+
+        if (matching.length > 1) {
+          const { deleteTaskAction } = await import("@/app/actions");
+          for (let i = 1; i < matching.length; i++) {
+            await deleteTaskAction(matching[i].id);
+          }
+        }
+
         setTasks((prev) =>
-          prev.map((t) =>
-            t.id === updated.id && t.date === updated.date ? updated : t
-          )
+          prev
+            .filter((t) => !matching.slice(1).some((m) => m.id === t.id))
+            .map((t) =>
+              t.id === updated.id ? updated : t
+            )
         );
       }
       closeEdit();
