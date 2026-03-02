@@ -280,7 +280,7 @@ export default function ProjectModal({
       border: "1px solid var(--border)",
       boxShadow:
         "0 10px 15px -3px rgba(15,23,42,0.25), 0 4px 6px -4px rgba(15,23,42,0.2)",
-      zIndex: 100,
+      zIndex: 9999,
     }),
     menuList: (base: any) => ({
       ...base,

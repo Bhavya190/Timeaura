@@ -54,7 +54,7 @@ export default function AddEmployeeModal({
     "employee"
   );
   const [department, setDepartment] = useState("Default Department");
-  const [location, setLocation] = useState("Default Location");
+  const [location, setLocation] = useState("Office");
   const [shift, setShift] = useState<"day" | "evening" | "night">("day");
 
   // Details
@@ -127,7 +127,7 @@ export default function AddEmployeeModal({
       setPassword("");
       setRole("employee");
       setDepartment("Default Department");
-      setLocation("Default Location");
+      setLocation("Office");
       setShift("day"); // default shift
       setAddress("");
       setCity("");
@@ -387,11 +387,15 @@ export default function AddEmployeeModal({
                   <label className="text-xs font-medium text-foreground">
                     Location
                   </label>
-                  <input
+                  <select
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
-                  />
+                  >
+                    <option value="Office">Office</option>
+                    <option value="Remote">Remote</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </select>
                 </div>
 
                 <div className="space-y-1">
