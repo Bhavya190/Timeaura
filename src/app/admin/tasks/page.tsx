@@ -31,6 +31,7 @@ import {
   Trash2,
   FileDown,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 // Helper to get employees by ID from state
 const getEmployeesById = (users: User[]) => Object.fromEntries(users.map((u) => [u.id, u]));
@@ -291,9 +292,10 @@ export default function AdminTasks() {
       await deleteTaskAction(id);
       setTasks((prev) => prev.filter((t) => t.id !== id));
       setOpenMenuId(null);
-    } catch (err) {
+      toast.success("Task deleted successfully");
+    } catch (err: any) {
       console.error("Failed to delete task:", err);
-      alert("Failed to delete task. Please try again.");
+      toast.error(err.message || "Failed to delete task. Please try again.");
     }
   };
 
@@ -305,9 +307,10 @@ export default function AdminTasks() {
       await Promise.all(tasksToRemove.map((t) => deleteTaskAction(t.id)));
       setTasks((prev) => prev.filter((t) => !tasksToRemove.some((rem) => rem.id === t.id)));
       setOpenMenuId(null);
-    } catch (err) {
+      toast.success("Task group deleted successfully");
+    } catch (err: any) {
       console.error("Failed to remove task group:", err);
-      alert("Failed to remove task group. Please try again.");
+      toast.error(err.message || "Failed to remove task group. Please try again.");
     }
   };
 
@@ -357,15 +360,16 @@ export default function AdminTasks() {
         }
       }
       setIsModalOpen(false);
-    } catch (err) {
+      toast.success(modalMode === "add" ? "Task created successfully" : "Task updated successfully");
+    } catch (err: any) {
       console.error("Failed to save task:", err);
-      alert("Failed to save task. Please try again.");
+      toast.error(err.message || "Failed to save task. Please try again.");
     }
   };
 
   const handleExportCSV = () => {
     if (filteredTasks.length === 0) {
-      alert("No data to export for current filters.");
+      toast.error("No data to export for current filters.");
       return;
     }
 

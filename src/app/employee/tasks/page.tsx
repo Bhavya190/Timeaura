@@ -29,6 +29,7 @@ import {
   Save,
 } from "lucide-react";
 import type { TaskStatus as TaskStatusType } from "@/types";
+import { toast } from "react-hot-toast";
 
 // Helper to get employees by ID from state
 const getEmployeesById = (users: UserType[]) => Object.fromEntries(users.map((u) => [u.id, u]));
@@ -67,11 +68,7 @@ function getWeekRange(base: Date = new Date()): DateRange {
   };
 }
 
-function addWeeks(dateStr: string, n: number) {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + n * 7);
-  return d;
-}
+
 
 export default function EmployeeTasksPage({ currentEmployeeId: propId }: { currentEmployeeId?: number }) {
   const router = useRouter();
@@ -240,21 +237,13 @@ export default function EmployeeTasksPage({ currentEmployeeId: propId }: { curre
   const handlePrevWeek = () => shiftWeek("prev");
   const handleNextWeek = () => shiftWeek("next");
 
-  const toggleMenu = (id: number) => {
-    setOpenMenuId((prev) => (prev === id ? null : id));
-  };
+
 
   const handleViewProject = (task: Task) => {
     router.push(`/employee/projects/${task.projectId}`);
   };
 
-  const handleOpenEdit = (task: Task) => {
-    setEditingTask(task);
-    setEditedHours(String(task.workedHours));
-    setEditedDescription(task.description ?? "");
-    setIsEditOpen(true);
-    setOpenMenuId(null);
-  };
+
 
   const handleCloseEdit = () => {
     setIsEditOpen(false);
@@ -277,10 +266,11 @@ export default function EmployeeTasksPage({ currentEmployeeId: propId }: { curre
       });
 
       setDbTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      toast.success("Task updated successfully");
       handleCloseEdit();
     } catch (err) {
       console.error("Failed to update task:", err);
-      alert("Failed to update task. Please try again.");
+      toast.error("Failed to update task. Please try again.");
     }
   };
 
@@ -301,9 +291,10 @@ export default function EmployeeTasksPage({ currentEmployeeId: propId }: { curre
 
       await Promise.all(tasksToRemove.map((t) => deleteTaskAction(t.id)));
       setDbTasks((prev) => prev.filter((t) => !tasksToRemove.some((rem) => rem.id === t.id)));
+      toast.success("Task group removed successfully");
     } catch (err) {
       console.error("Failed to remove task group:", err);
-      alert("Failed to remove task group. Please try again.");
+      toast.error("Failed to remove task group. Please try again.");
     }
   };
 
@@ -334,10 +325,11 @@ export default function EmployeeTasksPage({ currentEmployeeId: propId }: { curre
         });
         return newDb;
       });
+      toast.success("Task group updated successfully");
       setEditingGroup(null);
     } catch (err) {
       console.error("Failed to update task group:", err);
-      alert("Failed to update task group. Please try again.");
+      toast.error("Failed to update task group. Please try again.");
     }
   };
 

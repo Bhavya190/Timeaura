@@ -2,6 +2,7 @@ import { useEffect, FormEvent, useState, ChangeEvent } from "react";
 import { NotificationPayload } from "@/lib/settings";
 import { updateAdminNotificationsAction } from "@/app/actions";
 import { useUser } from "@/components/UserProvider";
+import { toast } from "react-hot-toast";
 
 export default function NotificationForm() {
   const { user, refreshUser } = useUser();
@@ -11,8 +12,6 @@ export default function NotificationForm() {
     securityAlerts: user?.securityAlerts ?? true,
   });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -34,8 +33,6 @@ export default function NotificationForm() {
     if (!user) return;
 
     setSaving(true);
-    setMessage(null);
-    setError(null);
     try {
       await updateAdminNotificationsAction(user.id, {
         emailNotifications: form.email,
@@ -43,9 +40,9 @@ export default function NotificationForm() {
         securityAlerts: form.securityAlerts,
       });
       await refreshUser();
-      setMessage("Notification preferences saved.");
+      toast.success("Notification preferences saved.");
     } catch (err: any) {
-      setError(err.message || "Failed to update notifications");
+      toast.error(err.message || "Failed to update notifications");
     } finally {
       setSaving(false);
     }
@@ -85,10 +82,6 @@ export default function NotificationForm() {
         >
           {saving ? "Saving..." : "Save changes"}
         </button>
-        {message && (
-          <p className="text-xs text-emerald-500">{message}</p>
-        )}
-        {error && <p className="text-xs text-red-500">{error}</p>}
       </div>
     </form>
   );

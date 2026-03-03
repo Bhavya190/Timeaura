@@ -5,6 +5,7 @@ import { FormEvent, useState, ChangeEvent } from "react";
 import { SettingsApi, SecurityPayload } from "@/lib/settings";
 import { updateAdminSecurityAction } from "@/app/actions";
 import { useUser } from "@/components/UserProvider";
+import { toast } from "react-hot-toast";
 
 export default function SecurityForm() {
   const { user, refreshUser } = useUser();
@@ -16,8 +17,6 @@ export default function SecurityForm() {
   });
 
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const { name, value, type, checked } = e.target;
@@ -32,17 +31,15 @@ export default function SecurityForm() {
     if (!user) return;
 
     if (form.newPassword !== form.confirmPassword) {
-      setError("New password and confirm password must match.");
+      toast.error("New password and confirm password must match.");
       return;
     }
     setSaving(true);
-    setMessage(null);
-    setError(null);
     try {
       await updateAdminSecurityAction(user.id, { password: form.newPassword });
       await refreshUser();
 
-      setMessage("Security settings updated.");
+      toast.success("Security settings updated.");
       setForm((prev) => ({
         ...prev,
         currentPassword: "",
@@ -50,7 +47,7 @@ export default function SecurityForm() {
         confirmPassword: "",
       }));
     } catch (err: any) {
-      setError(err.message || "Failed to update security settings");
+      toast.error(err.message || "Failed to update security settings");
     } finally {
       setSaving(false);
     }
@@ -134,10 +131,6 @@ export default function SecurityForm() {
         >
           {saving ? "Saving..." : "Save changes"}
         </button>
-        {message && (
-          <p className="text-xs text-emerald-500">{message}</p>
-        )}
-        {error && <p className="text-xs text-red-500">{error}</p>}
       </div>
     </form>
   );

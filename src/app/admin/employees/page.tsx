@@ -12,6 +12,7 @@ import {
 import { ChevronUp, ChevronDown } from "lucide-react";
 import AddEmployeeModal from "@/components/AddEmployeeModal";
 import ActionMenu from "@/components/ActionMenu";
+import { toast } from "react-hot-toast";
 
 function AvatarCircle({ name }: { name: string }) {
   const initials = name
@@ -81,9 +82,10 @@ export default function AdminEmployees() {
       await deleteEmployeeAction(id);
       setEmployees((prev) => prev.filter((e) => e.id !== id));
       setOpenMenuId(null);
-    } catch (err) {
+      toast.success("Employee removed successfully");
+    } catch (err: any) {
       console.error("Failed to delete employee:", err);
-      alert("Failed to delete employee. Please try again.");
+      toast.error(err.message || "Failed to delete employee. Please try again.");
     }
   };
 
@@ -113,22 +115,22 @@ export default function AdminEmployees() {
           created = await createEmployeeAction(empData);
         } catch (serverErr: any) {
           if (serverErr.message && serverErr.message.toLowerCase().includes("server action")) {
-            alert("The server has just been updated. Refreshing your browser automatically...");
+            toast.error("The server has just been updated. Refreshing your browser automatically...");
             window.location.reload();
             return;
           }
           throw serverErr;
         }
         if (created.error) {
-          alert(created.error);
+          toast.error(created.error);
           return;
         }
-        
+
         if (!created.emailSent) {
           const errorDetail = created.emailErrorMsg ? `\nError: ${created.emailErrorMsg}` : "";
-          alert(`Employee created successfully, but the invitation email failed to send! (Check SMTP/Mailtrap settings).${errorDetail}\n\nTemporary Password: ${created.tempPassword}\n\nPlease share this password with the employee manually.`);
+          toast.success(`Employee created successfully, but the invitation email failed to send! (Check SMTP/Mailtrap settings).${errorDetail}\n\nTemporary Password: ${created.tempPassword}\n\nPlease share this password with the employee manually.`, { duration: 10000 });
         } else {
-          alert(`Employee created successfully! An invitation email with their temporary password has been sent to ${created.email}.`);
+          toast.success(`Employee created successfully! An invitation email with their temporary password has been sent to ${created.email}.`, { duration: 5000 });
         }
         // Try mapping the created employee safely. If it fails, close modal and tell user to refresh.
         try {
@@ -165,7 +167,7 @@ export default function AdminEmployees() {
           setEmployees((prev) => [...prev, summary]);
         } catch (mappingErr) {
           console.error("Error mapping created employee to UI:", mappingErr, "Raw API Return:", created);
-          alert("Employee created and email result shown! Please refresh the page to see them in the list.");
+          toast.success("Employee created and email result shown! Please refresh the page to see them in the list.");
         }
       } else {
         if (!selectedEmployee) return;
@@ -174,14 +176,14 @@ export default function AdminEmployees() {
           updated = await updateEmployeeProfileAction(selectedEmployee.id, empData);
         } catch (serverErr: any) {
           if (serverErr.message && serverErr.message.toLowerCase().includes("server action")) {
-            alert("The server has just been updated. Refreshing your browser automatically...");
+            toast.error("The server has just been updated. Refreshing your browser automatically...");
             window.location.reload();
             return;
           }
           throw serverErr;
         }
         if (updated.error) {
-          alert(updated.error);
+          toast.error(updated.error);
           return;
         }
         const summary: Employee = {
@@ -220,9 +222,12 @@ export default function AdminEmployees() {
       }
       setIsModalOpen(false);
       setSelectedEmployee(null);
+      if (modalMode === "edit") {
+        toast.success("Employee updated successfully");
+      }
     } catch (err: any) {
       console.error("Failed to save employee:", err);
-      alert(err.message || "Failed to save employee. Please try again.");
+      toast.error(err.message || "Failed to save employee. Please try again.");
     }
   };
 

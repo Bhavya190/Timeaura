@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Check, XCircle, Clock4, ChevronDown, ChevronUp } from "lucide-react";
 import { fetchTimesheetsAction, approveTimesheetAction, rejectTimesheetAction, fetchUsersAction, fetchTasksAction, fetchProjectsAction } from "@/app/actions";
 import type { Timesheet, User, Task, Project } from "@/types";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
 
 export default function ApprovalsPage() {
     const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
@@ -224,7 +224,7 @@ export default function ApprovalsPage() {
                                                                 </div>
                                                                 {task.description && (
                                                                     <div className="col-span-12 text-muted-foreground mt-1 text-[11px] italic">
-                                                                        "{task.description}"
+                                                                        &quot;{task.description}&quot;
                                                                     </div>
                                                                 )}
                                                             </div>

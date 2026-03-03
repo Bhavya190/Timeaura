@@ -29,7 +29,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
 
 
 // Helpers to get by ID from state
@@ -158,7 +158,7 @@ export default function EmployeeTimesheetPage({ currentEmployeeId: propId }: { c
     [currentAnchor]
   );
   const weekKey = startISO;
-  const todayISO = toLocalISODate(new Date());
+
 
   const currentTimesheet = useMemo(() => {
     return dbTimesheets.find(ts => ts.weekStart === weekKey);
@@ -214,9 +214,7 @@ export default function EmployeeTimesheetPage({ currentEmployeeId: propId }: { c
       (hoursByTaskDay[gKey][t.date] ?? 0) + t.workedHours;
   }
 
-  const totalWorkedToday = rangeTasks
-    .filter((t) => t.date === todayISO)
-    .reduce((sum, t) => sum + t.workedHours, 0);
+
 
   const totalWorkedRange = rangeTasks.reduce(
     (sum, t) => sum + t.workedHours,

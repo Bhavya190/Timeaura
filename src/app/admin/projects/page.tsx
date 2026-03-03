@@ -12,6 +12,7 @@ import {
 import ProjectModal from "@/components/ProjectModal";
 import ActionMenu from "@/components/ActionMenu";
 import { ChevronLeft, ChevronRight, Calendar, ChevronUp, ChevronDown, FileDown } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 function StatusBadge({ status }: { status: ProjectStatus }) {
   const base =
@@ -176,9 +177,10 @@ export default function AdminProjects() {
       await deleteProjectAction(id);
       setProjects((prev) => prev.filter((p) => p.id !== id));
       setOpenMenuId(null);
-    } catch (err) {
+      toast.success("Project deleted successfully");
+    } catch (err: any) {
       console.error("Failed to delete project:", err);
-      alert("Failed to delete project. Please try again.");
+      toast.error(err.message || "Failed to delete project. Please try again.");
     }
   };
 
@@ -216,9 +218,10 @@ export default function AdminProjects() {
       }
       setIsModalOpen(false);
       setSelectedProject(null);
-    } catch (err) {
+      toast.success(modalMode === "add" ? "Project created successfully" : "Project updated successfully");
+    } catch (err: any) {
       console.error("Failed to save project:", err);
-      alert("Failed to save project. Please try again.");
+      toast.error(err.message || "Failed to save project. Please try again.");
     }
   };
 
@@ -229,7 +232,7 @@ export default function AdminProjects() {
 
   const handleExportCSV = () => {
     if (filteredProjects.length === 0) {
-      alert("No data to export for current filters.");
+      toast.error("No data to export for current filters.");
       return;
     }
 

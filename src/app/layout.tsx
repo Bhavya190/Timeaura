@@ -15,7 +15,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-background text-foreground">
         <AppThemeProvider>
           {children}
-          <Toaster position="bottom-right" />
+          <Toaster position="top-right" />
         </AppThemeProvider>
       </body>
     </html>

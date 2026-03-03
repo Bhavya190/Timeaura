@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-    getDailyTimeAction, 
-    clockInAction, 
-    pauseTimeAction, 
-    clockOutAction 
+import {
+    getDailyTimeAction,
+    clockInAction,
+    pauseTimeAction,
+    clockOutAction
 } from "@/app/actions";
 import { Clock, Play, Pause, Square } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 type TimeTrackerWidgetProps = {
     employeeId: number;
@@ -49,13 +50,13 @@ export default function TimeTrackerWidget({ employeeId, className = "" }: TimeTr
     // Live Ticker loop
     useEffect(() => {
         let interval: NodeJS.Timeout;
-        
+
         if (status === "Clocked In" && lastClockInTime) {
             interval = setInterval(() => {
                 const now = new Date().getTime();
                 const clockInMs = new Date(lastClockInTime).getTime();
                 const elapsedSinceClockIn = Math.floor((now - clockInMs) / 1000);
-                
+
                 // Add the dynamically elapsed time to the previously persisted totalSeconds from DB
                 setDisplaySeconds(totalSeconds + elapsedSinceClockIn);
             }, 1000);
@@ -82,7 +83,7 @@ export default function TimeTrackerWidget({ employeeId, className = "" }: TimeTr
             setTotalSeconds(res.totalSeconds);
             setLastClockInTime(res.lastClockInTime);
         } else {
-            alert(res.error);
+            toast.error(res.error);
         }
         setLoading(false);
     };
@@ -95,7 +96,7 @@ export default function TimeTrackerWidget({ employeeId, className = "" }: TimeTr
             setTotalSeconds(res.totalSeconds);
             setLastClockInTime(res.lastClockInTime);
         } else {
-            alert(res.error);
+            toast.error(res.error);
         }
         setLoading(false);
     };
@@ -109,7 +110,7 @@ export default function TimeTrackerWidget({ employeeId, className = "" }: TimeTr
             setTotalSeconds(res.totalSeconds);
             setLastClockInTime(res.lastClockInTime);
         } else {
-            alert(res.error);
+            toast.error(res.error);
         }
         setLoading(false);
     };

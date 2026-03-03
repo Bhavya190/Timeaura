@@ -1,8 +1,6 @@
-// src/components/settings/ProfileForm.tsx
-"use client";
-
+import { toast } from "react-hot-toast";
 import { useEffect, FormEvent, useState, ChangeEvent } from "react";
-import { SettingsApi, ProfilePayload } from "@/lib/settings";
+import { ProfilePayload } from "@/lib/settings";
 import { updateAdminSettingsAction } from "@/app/actions";
 import { PencilIcon } from "lucide-react";
 import { useUser } from "@/components/UserProvider";
@@ -53,8 +51,6 @@ export default function ProfileForm() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -81,10 +77,9 @@ export default function ProfileForm() {
 
     // Validate size (5MB = 5 * 1024 * 1024 bytes)
     if (file.size > 5 * 1024 * 1024) {
-      setError("File is too large. Max size is 5MB.");
+      toast.error("File is too large. Max size is 5MB.");
       return;
     }
-    setError(null);
     setIsProcessingImage(true);
 
     // Create a local URL for immediate preview (fixes the display bug)
@@ -104,7 +99,7 @@ export default function ProfileForm() {
       setIsProcessingImage(false);
     };
     reader.onerror = () => {
-      setError("Failed to process image.");
+      toast.error("Failed to process image.");
       setIsProcessingImage(false);
     };
     reader.readAsDataURL(file);
@@ -128,8 +123,6 @@ export default function ProfileForm() {
     if (!user) return;
 
     setSaving(true);
-    setMessage(null);
-    setError(null);
     try {
       // Mapping mobile to phone for the database
       const payload = {
@@ -144,9 +137,9 @@ export default function ProfileForm() {
       await updateAdminSettingsAction(user!.id, payload);
       await refreshUser();
 
-      setMessage("Profile updated successfully.");
+      toast.success("Profile updated successfully.");
     } catch (err: any) {
-      setError(err.message || "Failed to update profile");
+      toast.error(err.message || "Failed to update profile");
     } finally {
       setSaving(false);
     }
@@ -248,10 +241,6 @@ export default function ProfileForm() {
         >
           {saving ? "Saving..." : isProcessingImage ? "Processing image..." : "Save changes"}
         </button>
-        {message && (
-          <p className="text-xs text-emerald-500">{message}</p>
-        )}
-        {error && <p className="text-xs text-red-500">{error}</p>}
       </div>
     </form>
   );

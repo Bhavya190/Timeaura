@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
+import { toast } from "react-hot-toast";
 
 // Helpers to get by ID from state
 const getEmployeesById = (users: User[]) => Object.fromEntries(users.map((u) => [u.id, u]));
@@ -258,7 +259,7 @@ export default function AdminTimesheetPage() {
 
   const handleExportCSV = () => {
     if (exportRows.length === 0) {
-      alert("No data to export for current filters.");
+      toast.error("No data to export for current filters.");
       return;
     }
     const header = Object.keys(exportRows[0]);
@@ -279,18 +280,18 @@ export default function AdminTimesheetPage() {
 
   const handleExportXLSX = () => {
     if (exportRows.length === 0) {
-      alert("No data to export for current filters.");
+      toast.error("No data to export for current filters.");
       return;
     }
-    alert("XLSX export: connect SheetJS here using exportRows.");
+    toast.error("XLSX export: connect SheetJS here using exportRows.");
   };
 
   const handleExportPDF = () => {
     if (exportRows.length === 0) {
-      alert("No data to export for current filters.");
+      toast.error("No data to export for current filters.");
       return;
     }
-    alert("PDF export: connect jsPDF + autotable here using exportRows.");
+    toast.error("PDF export: connect jsPDF + autotable here using exportRows.");
   };
 
   const handleExport = () => {
@@ -394,9 +395,10 @@ export default function AdminTimesheetPage() {
         );
       }
       closeEdit();
+      toast.success("Timesheet updated successfully");
     } catch (err) {
       console.error("Failed to save timesheet edit:", err);
-      alert("Failed to save changes. Please try again.");
+      toast.error("Failed to save changes. Please try again.");
     }
   };
 
@@ -522,9 +524,10 @@ export default function AdminTimesheetPage() {
           prev.filter((id) => id !== rowDraft.rowId)
         );
       }
+      toast.success("Row added successfully");
     } catch (err) {
       console.error("Failed to add row:", err);
-      alert("Failed to add row. Please try again.");
+      toast.error("Failed to add row. Please try again.");
     }
   };
 

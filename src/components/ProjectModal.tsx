@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Select, { type MultiValue, components } from "react-select";
 import type { ProjectStatus } from "@/lib/projects";
 import { Project, fetchProjectsAction, fetchUsersAction, fetchClientsAction, User, Client, createClientAction } from "@/app/actions";
+import { toast } from "react-hot-toast";
 import {
   Building2,
   Users,
@@ -385,7 +386,7 @@ export default function ProjectModal({
       const saved: any = await createClientAction(newClient);
 
       if (saved.error) {
-        alert(saved.error);
+        toast.error(saved.error);
         return;
       }
 
@@ -398,9 +399,10 @@ export default function ProjectModal({
 
       // 4. Close modal
       setIsClientModalOpen(false);
+      toast.success("Client added successfully");
     } catch (err) {
       console.error("Failed to save client:", err);
-      alert("Failed to save client. Please try again.");
+      toast.error("Failed to save client. Please try again.");
     }
   };
 

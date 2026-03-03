@@ -12,6 +12,7 @@ import {
 import { ChevronUp, ChevronDown } from "lucide-react";
 import ClientModal from "@/components/ClientModal";
 import ActionMenu from "@/components/ActionMenu";
+import { toast } from "react-hot-toast";
 
 function StatusBadge({ status }: { status: Client["status"] }) {
   const isActive = status === "Active";
@@ -64,14 +65,15 @@ export default function AdminClients() {
     try {
       const res: any = await deleteClientAction(id);
       if (res?.error) {
-        alert(res.error);
+        toast.error(res.error);
         return;
       }
       setClients((prev) => prev.filter((c) => c.id !== id));
       setOpenMenuId(null);
+      toast.success("Client removed successfully");
     } catch (err: any) {
       console.error("Failed to delete client:", err);
-      alert(err.message || "Failed to delete client. Please try again.");
+      toast.error(err.message || "Failed to delete client. Please try again.");
     }
   };
 
@@ -99,7 +101,7 @@ export default function AdminClients() {
         const { id, ...data } = client;
         const created: any = await createClientAction(data);
         if (created.error) {
-          alert(created.error);
+          toast.error(created.error);
           return;
         }
         setClients((prev) => [...prev, created]);
@@ -107,7 +109,7 @@ export default function AdminClients() {
         const { id, ...data } = client;
         const updated: any = await updateClientAction(id, data);
         if (updated.error) {
-          alert(updated.error);
+          toast.error(updated.error);
           return;
         }
         setClients((prev) =>
@@ -116,9 +118,10 @@ export default function AdminClients() {
       }
       setIsModalOpen(false);
       setSelectedClient(null);
+      toast.success(modalMode === "add" ? "Client added successfully" : "Client updated successfully");
     } catch (err: any) {
       console.error("Failed to save client:", err);
-      alert(err.message || "Failed to save client. Please try again.");
+      toast.error(err.message || "Failed to save client. Please try again.");
     }
   };
 
