@@ -67,31 +67,34 @@ export default function DepartmentDropdown({ selectedId, onSelect }: Props) {
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
+                className={`flex w-full items-center justify-between rounded-lg border bg-[#020617] px-4 py-2 text-sm outline-none transition-all ${open ? "border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,1)]" : "border-slate-800 hover:border-slate-700"
+                    }`}
             >
-                <span className={selectedDept ? "text-foreground" : "text-muted"}>
-                    {selectedDept ? selectedDept.name : "Select Department"}
-                </span>
-                <ChevronDown className={`h-4 w-4 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
-            </button>
-
-            {open && (
-                <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card p-1 shadow-xl animate-in fade-in zoom-in duration-200">
-                    <div className="relative mb-1">
-                        <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted" />
+                <div className="flex-1 text-left">
+                    {open ? (
                         <input
                             autoFocus
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search or create department..."
-                            className="w-full rounded-lg bg-muted/50 py-2 pl-9 pr-3 text-xs outline-none focus:ring-1 focus:ring-emerald-500/40"
+                            placeholder="Select department"
+                            className="bg-transparent outline-none w-full text-slate-100 placeholder:text-slate-500"
+                            onClick={(e) => e.stopPropagation()}
                         />
-                    </div>
+                    ) : (
+                        <span className={selectedDept ? "text-slate-100" : "text-slate-500"}>
+                            {selectedDept ? selectedDept.name : "Select department"}
+                        </span>
+                    )}
+                </div>
+                <ChevronDown className={`h-4 w-4 text-emerald-500 transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
 
-                    <div className="max-h-48 overflow-y-auto overflow-x-hidden py-1">
+            {open && (
+                <div className="absolute z-50 mt-2 w-full rounded-xl border border-slate-800 bg-[#0f172a] p-1 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                    <div className="max-h-60 overflow-y-auto overflow-x-hidden p-1 scrollbar-thin scrollbar-thumb-slate-700">
                         {loading ? (
-                            <div className="flex items-center justify-center py-4">
-                                <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                            <div className="flex items-center justify-center py-6">
+                                <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
                             </div>
                         ) : filtered.length > 0 ? (
                             filtered.map((dept) => (
@@ -102,33 +105,51 @@ export default function DepartmentDropdown({ selectedId, onSelect }: Props) {
                                         onSelect(dept);
                                         setOpen(false);
                                     }}
-                                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs hover:bg-emerald-500/10 hover:text-emerald-500 transition-colors"
+                                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-all ${selectedId === dept.id
+                                            ? "bg-slate-800 text-slate-100"
+                                            : "text-slate-300 hover:bg-slate-800/50 hover:text-slate-100"
+                                        }`}
                                 >
-                                    <span>{dept.name}</span>
-                                    {selectedId === dept.id && <Check className="h-3.5 w-3.5" />}
+                                    <span className="font-medium">{dept.name}</span>
+                                    {selectedId === dept.id && <Check className="h-4 w-4 text-emerald-500" />}
                                 </button>
                             ))
                         ) : (
-                            <div className="px-3 py-4 text-center">
-                                <p className="text-xs text-muted">No department found</p>
+                            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                                <p className="text-sm text-slate-500 mb-4 font-medium">No options</p>
+                                {search.trim() && (
+                                    <button
+                                        type="button"
+                                        onClick={handleCreate}
+                                        disabled={creating}
+                                        className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-6 py-2.5 text-sm font-bold text-emerald-500 hover:bg-emerald-500 hover:text-slate-950 transition-all active:scale-95 mx-auto"
+                                    >
+                                        {creating ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Plus className="h-4 w-4" />
+                                        )}
+                                        Add New Department
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
 
-                    {search.trim() && !departments.some(d => d.name.toLowerCase() === search.toLowerCase().trim()) && (
-                        <div className="border-t border-border mt-1 pt-1">
+                    {search.trim() && filtered.length > 0 && !departments.some(d => d.name.toLowerCase() === search.toLowerCase().trim()) && (
+                        <div className="border-t border-slate-800 p-2 text-center">
                             <button
                                 type="button"
                                 onClick={handleCreate}
                                 disabled={creating}
-                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-emerald-500 hover:bg-emerald-500/10 transition-colors"
+                                className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-6 py-2.5 text-sm font-bold text-emerald-500 hover:bg-emerald-500 hover:text-slate-950 transition-all active:scale-95 mx-auto"
                             >
                                 {creating ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                    <Plus className="h-3.5 w-3.5" />
+                                    <Plus className="h-4 w-4" />
                                 )}
-                                Create &quot;{search.trim()}&quot;
+                                Add &quot;{search.trim()}&quot;
                             </button>
                         </div>
                     )}
