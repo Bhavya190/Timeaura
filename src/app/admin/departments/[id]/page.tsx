@@ -13,7 +13,7 @@ import {
     Users,
     Mail,
     BadgeCheck,
-    IdentificationCard,
+    IdCard,
     Loader2
 } from "lucide-react";
 
@@ -123,7 +123,7 @@ export default function DepartmentDetailsPage() {
                                         {emp.avatarUrl ? (
                                             <img src={emp.avatarUrl} alt={emp.firstName} className="h-full w-full rounded-xl object-cover" />
                                         ) : (
-                                            <IdentificationCard className="h-5 w-5 text-muted group-hover:text-emerald-500" />
+                                            <IdCard className="h-5 w-5 text-muted group-hover:text-emerald-500" />
                                         )}
                                     </div>
                                     <div className="min-w-0">
