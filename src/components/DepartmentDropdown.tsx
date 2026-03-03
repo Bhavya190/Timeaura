@@ -67,7 +67,7 @@ export default function DepartmentDropdown({ selectedId, onSelect }: Props) {
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className={`flex w-full items-center justify-between rounded-lg border bg-[#020617] px-4 py-2 text-sm outline-none transition-all ${open ? "border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,1)]" : "border-slate-800 hover:border-slate-700"
+                className={`flex w-full items-center justify-between rounded-lg border bg-background px-4 py-2 text-sm outline-none transition-all ${open ? "border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]" : "border-border hover:border-muted"
                     }`}
             >
                 <div className="flex-1 text-left">
@@ -77,11 +77,11 @@ export default function DepartmentDropdown({ selectedId, onSelect }: Props) {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Select department"
-                            className="bg-transparent outline-none w-full text-slate-100 placeholder:text-slate-500"
+                            className="bg-transparent outline-none w-full text-foreground placeholder:text-muted"
                             onClick={(e) => e.stopPropagation()}
                         />
                     ) : (
-                        <span className={selectedDept ? "text-slate-100" : "text-slate-500"}>
+                        <span className={selectedDept ? "text-foreground" : "text-muted"}>
                             {selectedDept ? selectedDept.name : "Select department"}
                         </span>
                     )}
@@ -90,8 +90,8 @@ export default function DepartmentDropdown({ selectedId, onSelect }: Props) {
             </button>
 
             {open && (
-                <div className="absolute z-50 mt-2 w-full rounded-xl border border-slate-800 bg-[#0f172a] p-1 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                    <div className="max-h-60 overflow-y-auto overflow-x-hidden p-1 scrollbar-thin scrollbar-thumb-slate-700">
+                <div className="absolute z-50 mt-2 w-full rounded-xl border border-border bg-card p-1 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                    <div className="max-h-60 overflow-y-auto overflow-x-hidden p-1 scrollbar-thin scrollbar-thumb-border">
                         {loading ? (
                             <div className="flex items-center justify-center py-6">
                                 <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
@@ -106,8 +106,8 @@ export default function DepartmentDropdown({ selectedId, onSelect }: Props) {
                                         setOpen(false);
                                     }}
                                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-all ${selectedId === dept.id
-                                            ? "bg-slate-800 text-slate-100"
-                                            : "text-slate-300 hover:bg-slate-800/50 hover:text-slate-100"
+                                            ? "bg-emerald-500/10 text-emerald-500"
+                                            : "text-foreground hover:bg-muted/50"
                                         }`}
                                 >
                                     <span className="font-medium">{dept.name}</span>
@@ -116,13 +116,13 @@ export default function DepartmentDropdown({ selectedId, onSelect }: Props) {
                             ))
                         ) : (
                             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                                <p className="text-sm text-slate-500 mb-4 font-medium">No options</p>
+                                <p className="text-sm text-muted mb-4 font-medium">No options</p>
                                 {search.trim() && (
                                     <button
                                         type="button"
                                         onClick={handleCreate}
                                         disabled={creating}
-                                        className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-6 py-2.5 text-sm font-bold text-emerald-500 hover:bg-emerald-500 hover:text-slate-950 transition-all active:scale-95 mx-auto"
+                                        className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-6 py-2.5 text-sm font-bold text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all active:scale-95 mx-auto"
                                     >
                                         {creating ? (
                                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -137,12 +137,12 @@ export default function DepartmentDropdown({ selectedId, onSelect }: Props) {
                     </div>
 
                     {search.trim() && filtered.length > 0 && !departments.some(d => d.name.toLowerCase() === search.toLowerCase().trim()) && (
-                        <div className="border-t border-slate-800 p-2 text-center">
+                        <div className="border-t border-border p-2 text-center">
                             <button
                                 type="button"
                                 onClick={handleCreate}
                                 disabled={creating}
-                                className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-6 py-2.5 text-sm font-bold text-emerald-500 hover:bg-emerald-500 hover:text-slate-950 transition-all active:scale-95 mx-auto"
+                                className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-6 py-2.5 text-sm font-bold text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all active:scale-95 mx-auto"
                             >
                                 {creating ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
