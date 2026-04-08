@@ -1,31 +1,43 @@
+name: timeaura
+
 services:
-  db:
+  timeaura-db:
     image: postgres:15-alpine
-    container_name: timey-postgres-test
+    container_name: timeaura-postgres
     restart: always
     environment:
-      POSTGRES_USER: timey_user_test
-      POSTGRES_PASSWORD: timey_pass_test
-      POSTGRES_DB: timey_db_test
+      POSTGRES_USER: timeaura_user
+      POSTGRES_PASSWORD: Time$Aura@TF123!
+      POSTGRES_DB: timeaura_db
     ports:
       - "5434:5432"
     volumes:
-      - pgdata_test:/var/lib/postgresql/data
+      - timeaura_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timeaura_user -d timeaura_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
-  app:
+  timeaura-app:
+    image: timeaura-app:latest
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: timey-app-test
+    container_name: timeaura-app
     restart: always
     ports:
       - "3001:3000"
     environment:
-      - DATABASE_URL=postgresql://timey_user_test:timey_pass_test@db:5432/timey_db_test?schema=public
-      - NEXTAUTH_SECRET=your_secret_here
-      - NEXTAUTH_URL=http://localhost:3001
+      DATABASE_URL: postgresql://timeaura_user:timeaura_pass@timeaura-db:5432/timeaura_db?schema=public&sslmode=disable
+      NEXTAUTH_SECRET: c0/YLmDsVXx+WUyx0IJw+fgH0toH7+NsXU5m5tGlfZc=
+      NEXTAUTH_URL: http://timeaura.techforbs.com
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
     depends_on:
-      - db
+      timeaura-db:
+        condition: service_healthy
 
 volumes:
-  pgdata_test:
+  timeaura_pgdata:

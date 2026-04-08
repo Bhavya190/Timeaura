@@ -10,13 +10,17 @@ FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Generate Prisma client BEFORE build
+RUN npx prisma generate
 RUN npm run build
 
 # Production runner
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=10000
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
 RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -24,14 +28,12 @@ RUN adduser --system --uid 1001 nextjs
 # Copy standalone Next.js app
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/scripts ./scripts
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
-# Copy production dependencies for scripts
-COPY --from=deps /app/node_modules ./node_modules
+# Copy ALL production node_modules (includes bcryptjs, Prisma, etc.)
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+
 USER nextjs
-EXPOSE 10000
-ENV HOSTNAME="0.0.0.0"
-
-# Use node directly
+EXPOSE 3000
 CMD ["/bin/sh", "-c", "node scripts/init-db.js && node server.js"]

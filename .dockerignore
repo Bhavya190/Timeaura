@@ -17,3 +17,5 @@ build_err.txt
 build_log.txt
 inspect-db.ts
 test-token.ts
+*.ppk
+*.pem
