@@ -1,5 +1,5 @@
 // users.ts (or employees.ts)
-import pool from "./db";
+import prisma from "./db";
 
 // Auth / basic user
 export type Role = "admin" | "employee" | "teamLead";
@@ -53,8 +53,8 @@ export type Employee = {
 };
 
 export async function getUsers(): Promise<User[]> {
-  const result = await pool.query('SELECT * FROM "Employee"');
-  return result.rows.map(emp => ({
+  const employees = await prisma.employee.findMany();
+  return employees.map(emp => ({
     id: emp.id,
     name: `${emp.firstName} ${emp.lastName}`,
     email: emp.email,
@@ -64,43 +64,30 @@ export async function getUsers(): Promise<User[]> {
 }
 
 export async function getEmployees(): Promise<Employee[]> {
-  const result = await pool.query('SELECT * FROM "Employee"');
-  return result.rows as Employee[];
+  const employees = await prisma.employee.findMany();
+  return employees as unknown as Employee[];
 }
 
 export async function createEmployee(data: Omit<Employee, "id">): Promise<Employee> {
-  const fields = Object.keys(data).map(key => `"${key}"`);
-  // Convert empty strings to null to avoid Postgres type casting errors (e.g. for dates or numbers)
-  const values = Object.values(data).map(v => v === "" ? null : v);
-  const placeholders = values.map((_, i) => `$${i + 1}`);
-
-  const queryStr = `INSERT INTO "Employee" (${fields.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING *`;
-  console.log("SQL QUERY:", queryStr);
-  console.log("VALUES:", values);
-
-  try {
-    const result = await pool.query(queryStr, values);
-    return result.rows[0];
-  } catch (err: any) {
-    console.error("PG ERROR:", err);
-    throw new Error(`DB Error: ${err.message}`);
-  }
+  const created = await prisma.employee.create({
+    data: {
+      ...data,
+      departmentId: data.departmentId || null,
+    } as any
+  });
+  return created as unknown as Employee;
 }
 
 export async function updateEmployeeProfile(id: number, data: Partial<Employee>): Promise<Employee> {
-  const updates = Object.keys(data).map((key, i) => `"${key}" = $${i + 2}`);
-  // Convert empty strings to null
-  const values = [id, ...Object.values(data).map(v => v === "" ? null : v)];
-
-  const result = await pool.query(
-    `UPDATE "Employee" SET ${updates.join(', ')} WHERE id = $1 RETURNING *`,
-    values
-  );
-  return result.rows[0];
+  const updated = await prisma.employee.update({
+    where: { id },
+    data: data as any
+  });
+  return updated as unknown as Employee;
 }
 
 export async function deleteEmployee(id: number): Promise<void> {
-  await pool.query('DELETE FROM "Employee" WHERE id = $1', [id]);
+  await prisma.employee.delete({
+    where: { id }
+  });
 }
-
-// Temporary exports removed as all components are now updated to use server actions

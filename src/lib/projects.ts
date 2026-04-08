@@ -1,4 +1,4 @@
-import pool from "./db";
+import prisma from "./db";
 
 export type ProjectStatus = "Active" | "On Hold" | "Completed";
 
@@ -26,16 +26,15 @@ export type Project = {
 };
 
 export async function getProjects(): Promise<Project[]> {
-  const result1 = await pool.query('SELECT * FROM "Project"');
-  const result2 = await pool.query('SELECT * FROM "_TeamMembers"');
-  const projects = result1.rows;
-  const relations = result2.rows;
+  const projects = await prisma.project.findMany({
+    include: { Employee_TeamMembers: { select: { id: true } } }
+  });
 
-  return projects.map(p => ({
+  return projects.map((p: any) => ({
     ...p,
     status: p.status as ProjectStatus,
     billingType: p.billingType as "fixed" | "hourly" | undefined,
-    teamMemberIds: relations.filter(r => r.B === p.id).map(r => r.A),
+    teamMemberIds: p.Employee_TeamMembers.map((e: any) => e.id),
     defaultBillingRate: p.defaultBillingRate ?? undefined,
     fixedCost: p.fixedCost ?? undefined,
     startDate: p.startDate ?? undefined,
@@ -50,27 +49,23 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function createProject(data: Omit<Project, "id">): Promise<Project> {
-  const { teamMemberIds, ...rest } = data;
+  const { teamMemberIds, budget, totalHours, ...rest } = data;
 
-  const result = await pool.query(
-    `INSERT INTO "Project" ("name", "code", "clientId", "clientName", "teamLeadId", "managerId", "defaultBillingRate", "billingType", "fixedCost", "startDate", "endDate", "invoiceFileName", "description", "duration", "estimatedCost", "status")
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-     RETURNING *`,
-    [rest.name, rest.code, rest.clientId, rest.clientName, rest.teamLeadId, rest.managerId, rest.defaultBillingRate || null, rest.billingType || null, rest.fixedCost || null, rest.startDate || null, rest.endDate || null, rest.invoiceFileName || null, rest.description || null, rest.duration || null, rest.estimatedCost || null, rest.status]
-  );
-  const project = result.rows[0];
-
-  if (teamMemberIds && teamMemberIds.length > 0) {
-    for (const empId of teamMemberIds) {
-      await pool.query('INSERT INTO "_TeamMembers" ("A", "B") VALUES ($1, $2)', [empId, project.id]);
-    }
-  }
+  const project = await prisma.project.create({
+    data: {
+      ...rest,
+      Employee_TeamMembers: {
+        connect: (teamMemberIds || []).map(id => ({ id }))
+      }
+    } as any,
+    include: { Employee_TeamMembers: { select: { id: true } } }
+  });
 
   return {
     ...project,
     status: project.status as ProjectStatus,
     billingType: project.billingType as "fixed" | "hourly" | undefined,
-    teamMemberIds: teamMemberIds || [],
+    teamMemberIds: (project as any).Employee_TeamMembers.map((e: any) => e.id),
     defaultBillingRate: project.defaultBillingRate ?? undefined,
     fixedCost: project.fixedCost ?? undefined,
     startDate: project.startDate ?? undefined,
@@ -81,52 +76,31 @@ export async function createProject(data: Omit<Project, "id">): Promise<Project>
     estimatedCost: project.estimatedCost ?? undefined,
     budget: project.estimatedCost ?? undefined,
     totalHours: 0,
-  };
+  } as Project;
 }
 
 export async function updateProject(id: number, data: Partial<Project>): Promise<Project> {
-  const { teamMemberIds, ...rest } = data;
+  const { teamMemberIds, budget, totalHours, ...rest } = data;
 
-  const result = await pool.query(
-    `UPDATE "Project"
-     SET 
-       "name" = COALESCE($1, "name"),
-       "code" = COALESCE($2, "code"),
-       "clientId" = COALESCE($3, "clientId"),
-       "clientName" = COALESCE($4, "clientName"),
-       "teamLeadId" = COALESCE($5, "teamLeadId"),
-       "managerId" = COALESCE($6, "managerId"),
-       "defaultBillingRate" = COALESCE($7, "defaultBillingRate"),
-       "billingType" = COALESCE($8, "billingType"),
-       "fixedCost" = COALESCE($9, "fixedCost"),
-       "startDate" = COALESCE($10, "startDate"),
-       "endDate" = COALESCE($11, "endDate"),
-       "invoiceFileName" = COALESCE($12, "invoiceFileName"),
-       "description" = COALESCE($13, "description"),
-       "duration" = COALESCE($14, "duration"),
-       "estimatedCost" = COALESCE($15, "estimatedCost"),
-       "status" = COALESCE($16, "status")
-     WHERE "id" = $17
-     RETURNING *`,
-    [rest.name || null, rest.code || null, rest.clientId || null, rest.clientName || null, rest.teamLeadId || null, rest.managerId || null, rest.defaultBillingRate || null, rest.billingType || null, rest.fixedCost || null, rest.startDate || null, rest.endDate || null, rest.invoiceFileName || null, rest.description || null, rest.duration || null, rest.estimatedCost || null, rest.status || null, id]
-  );
-  const project = result.rows[0];
+  let updateData: any = { ...rest };
 
   if (teamMemberIds) {
-    await pool.query('DELETE FROM "_TeamMembers" WHERE "B" = $1', [id]);
-    for (const empId of teamMemberIds) {
-      await pool.query('INSERT INTO "_TeamMembers" ("A", "B") VALUES ($1, $2)', [empId, id]);
-    }
+    updateData.Employee_TeamMembers = {
+      set: teamMemberIds.map(id => ({ id }))
+    };
   }
 
-  const relationsResult = await pool.query('SELECT "A" FROM "_TeamMembers" WHERE "B" = $1', [id]);
-  const currentRelations = relationsResult.rows;
+  const project = await prisma.project.update({
+    where: { id },
+    data: updateData,
+    include: { Employee_TeamMembers: { select: { id: true } } }
+  });
 
   return {
     ...project,
     status: project.status as ProjectStatus,
     billingType: project.billingType as "fixed" | "hourly" | undefined,
-    teamMemberIds: currentRelations.map(r => r.A),
+    teamMemberIds: (project as any).Employee_TeamMembers.map((e: any) => e.id),
     defaultBillingRate: project.defaultBillingRate ?? undefined,
     fixedCost: project.fixedCost ?? undefined,
     startDate: project.startDate ?? undefined,
@@ -137,14 +111,9 @@ export async function updateProject(id: number, data: Partial<Project>): Promise
     estimatedCost: project.estimatedCost ?? undefined,
     budget: project.estimatedCost ?? undefined,
     totalHours: 0,
-  };
+  } as Project;
 }
 
 export async function deleteProject(id: number): Promise<void> {
-  // Manual cleanup of many-to-many relationship
-  await pool.query('DELETE FROM "_TeamMembers" WHERE "B" = $1', [id]);
-  // Delete the project
-  await pool.query('DELETE FROM "Project" WHERE "id" = $1', [id]);
+  await prisma.project.delete({ where: { id } });
 }
-
-// initialProjects export removed, use fetchProjectsAction instead

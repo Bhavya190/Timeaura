@@ -1,4 +1,4 @@
-import pool from "./db";
+import prisma from "./db";
 
 export type ClientStatus = "Active" | "Inactive";
 
@@ -19,8 +19,7 @@ export type Client = {
 };
 
 export async function getClients(): Promise<Client[]> {
-  const result = await pool.query(`SELECT * FROM "Client"`);
-  const clients = result.rows;
+  const clients = await prisma.client.findMany();
   return clients.map((c: any) => ({
     ...c,
     status: c.status as ClientStatus,
@@ -31,91 +30,51 @@ export async function getClients(): Promise<Client[]> {
     zip: c.zip ?? undefined,
     contactNumber: c.contactNumber ?? undefined,
     defaultRate: c.defaultRate ?? undefined,
-    fixedBidMode: c.fixedBidMode,
+    fixedBidMode: c.fixedBidMode || false,
   }));
 }
 
 export async function createClient(data: Omit<Client, "id">): Promise<Client> {
-  const values = [data.name, data.nickname || null, data.email, data.country, data.address || null, data.city || null, data.stateRegion || null, data.zip || null, data.contactNumber || null, data.defaultRate || null, data.fixedBidMode, data.status]
-    .map(v => v === "" ? null : v);
-
-  try {
-    const result = await pool.query(
-      `INSERT INTO "Client" ("name", "nickname", "email", "country", "address", "city", "stateRegion", "zip", "contactNumber", "defaultRate", "fixedBidMode", "status")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       RETURNING *`,
-      values
-    );
-    const client = result.rows[0];
-    return {
-      ...client,
-      status: client.status as ClientStatus,
-      nickname: client.nickname ?? undefined,
-      address: client.address ?? undefined,
-      city: client.city ?? undefined,
-      stateRegion: client.stateRegion ?? undefined,
-      zip: client.zip ?? undefined,
-      contactNumber: client.contactNumber ?? undefined,
-      defaultRate: client.defaultRate ?? undefined,
-      fixedBidMode: client.fixedBidMode,
-    };
-  } catch (err: any) {
-    throw new Error(`DB Error: ${err.message}`);
-  }
+  const client = await prisma.client.create({
+    data: data as any
+  });
+  return {
+    ...client,
+    status: client.status as ClientStatus,
+    nickname: client.nickname ?? undefined,
+    address: client.address ?? undefined,
+    city: client.city ?? undefined,
+    stateRegion: client.stateRegion ?? undefined,
+    zip: client.zip ?? undefined,
+    contactNumber: client.contactNumber ?? undefined,
+    defaultRate: client.defaultRate ?? undefined,
+    fixedBidMode: client.fixedBidMode || false,
+  } as Client;
 }
 
 export async function updateClient(id: number, data: Partial<Client>): Promise<Client> {
-  // Replace "" with null to prevent casting errors
-  const values = [data.name || null, data.nickname || null, data.email || null, data.country || null, data.address || null, data.city || null, data.stateRegion || null, data.zip || null, data.contactNumber || null, data.defaultRate || null, data.fixedBidMode ?? null, data.status || null, id]
-    .map(v => v === "" ? null : v);
+  let updateData: any = { ...data };
 
-  try {
-    const result = await pool.query(
-      `UPDATE "Client"
-       SET 
-         "name" = COALESCE($1, "name"),
-         "nickname" = COALESCE($2, "nickname"),
-         "email" = COALESCE($3, "email"),
-         "country" = COALESCE($4, "country"),
-         "address" = COALESCE($5, "address"),
-         "city" = COALESCE($6, "city"),
-         "stateRegion" = COALESCE($7, "stateRegion"),
-         "zip" = COALESCE($8, "zip"),
-         "contactNumber" = COALESCE($9, "contactNumber"),
-         "defaultRate" = COALESCE($10, "defaultRate"),
-         "fixedBidMode" = COALESCE($11, "fixedBidMode"),
-         "status" = COALESCE($12, "status")
-       WHERE "id" = $13
-       RETURNING *`,
-      values
-    );
-    const client = result.rows[0];
-    return {
-      ...client,
-      status: client.status as ClientStatus,
-      nickname: client.nickname ?? undefined,
-      address: client.address ?? undefined,
-      city: client.city ?? undefined,
-      stateRegion: client.stateRegion ?? undefined,
-      zip: client.zip ?? undefined,
-      contactNumber: client.contactNumber ?? undefined,
-      defaultRate: client.defaultRate ?? undefined,
-      fixedBidMode: client.fixedBidMode,
-    };
-  } catch (err: any) {
-    throw new Error(`DB Error: ${err.message}`);
-  }
+  // map undefined to null or just pass through. Prisma ignores undefined.
+  const client = await prisma.client.update({
+    where: { id },
+    data: updateData
+  });
+  
+  return {
+    ...client,
+    status: client.status as ClientStatus,
+    nickname: client.nickname ?? undefined,
+    address: client.address ?? undefined,
+    city: client.city ?? undefined,
+    stateRegion: client.stateRegion ?? undefined,
+    zip: client.zip ?? undefined,
+    contactNumber: client.contactNumber ?? undefined,
+    defaultRate: client.defaultRate ?? undefined,
+    fixedBidMode: client.fixedBidMode || false,
+  } as Client;
 }
 
 export async function deleteClient(id: number): Promise<void> {
-  try {
-    await pool.query('DELETE FROM "Client" WHERE "id" = $1', [id]);
-  } catch (err: any) {
-    if (err.code === '23503') {
-      throw new Error(`Cannot delete this client because they are currently assigned to one or more projects. Please delete or reassign those projects first.`);
-    }
-    throw new Error(`DB Error: ${err.message}`);
-  }
+  await prisma.client.delete({ where: { id } });
 }
-
-// initialClients export removed, use fetchClientsAction instead

@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Client {
+  id            Int       @id @default(autoincrement())
+  name          String
+  nickname      String?
+  email         String?
+  country       String?
+  address       String?
+  city          String?
+  stateRegion   String?
+  zip           String?
+  contactNumber String?
+  defaultRate   String?
+  fixedBidMode  Boolean?  @default(false)
+  status        String    @default("Active")
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @default(now()) @db.Timestamp(6)
+  Project       Project[]
+}
+
+model DailyTime {
+  id              Int       @id @default(autoincrement())
+  employeeId      Int
+  date            String
+  status          String    @default("Not Started")
+  totalSeconds    Int       @default(0)
+  lastClockInTime DateTime? @db.Timestamp(6)
+  createdAt       DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime  @default(now()) @db.Timestamp(6)
+  Employee        Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+}
+
+model Department {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime   @default(now()) @db.Timestamp(6)
+  Employee    Employee[]
+}
+
+model Employee {
+  id                                   Int            @id @default(autoincrement())
+  firstName                            String
+  lastName                             String
+  email                                String         @unique
+  password                             String
+  role                                 String         @default("employee")
+  code                                 String?
+  department                           String?
+  departmentId                         Int?
+  location                             String?
+  shift                                String?        @default("N/A")
+  address                              String?
+  city                                 String?
+  stateRegion                          String?
+  country                              String?
+  zip                                  String?
+  phone                                String?
+  hireDate                             String?
+  workType                             String?
+  billingType                          String?
+  employeeRate                         String?
+  employeeCurrency                     String?        @default("USD")
+  billingRateType                      String?
+  billingCurrency                      String?        @default("USD")
+  billingStart                         String?
+  billingEnd                           String?
+  avatarUrl                            String?
+  createdAt                            DateTime       @default(now()) @db.Timestamp(6)
+  updatedAt                            DateTime       @default(now()) @db.Timestamp(6)
+  DailyTime                            DailyTime[]
+  Notification                         Notification[]
+  Project_Project_managerIdToEmployee  Project[]      @relation("Project_managerIdToEmployee")
+  Project_Project_teamLeadIdToEmployee Project[]      @relation("Project_teamLeadIdToEmployee")
+  Timesheet                            Timesheet[]
+  Trash                                Trash[]
+  Task                                 Task[]         @relation("AssigneeTasks")
+  Project_TeamMembers                  Project[]      @relation("TeamMembers")
+  Department                           Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  Employee  Employee @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Project {
+  id                                    Int        @id @default(autoincrement())
+  name                                  String
+  code                                  String     @unique
+  clientId                              Int
+  clientName                            String
+  teamLeadId                            Int?
+  managerId                             Int?
+  defaultBillingRate                    String?
+  billingType                           String?
+  fixedCost                             String?
+  startDate                             String?
+  endDate                               String?
+  invoiceFileName                       String?
+  description                           String?
+  duration                              String?
+  estimatedCost                         String?
+  status                                String     @default("Active")
+  createdAt                             DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt                             DateTime   @default(now()) @db.Timestamp(6)
+  Client                                Client     @relation(fields: [clientId], references: [id])
+  Employee_Project_managerIdToEmployee  Employee?  @relation("Project_managerIdToEmployee", fields: [managerId], references: [id])
+  Employee_Project_teamLeadIdToEmployee Employee?  @relation("Project_teamLeadIdToEmployee", fields: [teamLeadId], references: [id])
+  Task                                  Task[]
+  Employee_TeamMembers                  Employee[] @relation("TeamMembers")
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  projectId   Int
+  projectName String
+  name        String
+  workedHours Float      @default(0)
+  startDate   String
+  dueDate     String?
+  reportedTo  String?
+  status      String     @default("Not Started")
+  description String?
+  billingType String     @default("billable")
+  createdAt   DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime   @default(now()) @db.Timestamp(6)
+  Project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  Employee    Employee[] @relation("AssigneeTasks")
+}
+
+model Timesheet {
+  id               Int      @id @default(autoincrement())
+  employeeId       Int
+  weekStart        String
+  status           String   @default("Not Submitted")
+  rejectionComment String?
+  createdAt        DateTime @default(now()) @db.Timestamp(6)
+  updatedAt        DateTime @default(now()) @db.Timestamp(6)
+  Employee         Employee @relation(fields: [employeeId], references: [id])
+}
+
+model Trash {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  entityType String
+  entityId   Int
+  entityData Json
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  Employee   Employee @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

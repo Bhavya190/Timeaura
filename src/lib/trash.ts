@@ -1,4 +1,4 @@
-import pool from "./db";
+import prisma from "./db";
 
 export type TrashItemType = "Employee" | "Client" | "Project" | "Task";
 
@@ -17,197 +17,157 @@ export async function moveToTrash(
   entityId: number,
   entityData: any
 ): Promise<void> {
-  await pool.query(
-    `INSERT INTO "Trash" ("userId", "entityType", "entityId", "entityData") 
-     VALUES ($1, $2, $3, $4)`,
-    [userId, entityType, entityId, JSON.stringify(entityData)]
-  );
+  await prisma.trash.create({
+    data: {
+      userId,
+      entityType,
+      entityId,
+      entityData: entityData as any
+    }
+  });
 }
 
 export async function getTrashForUser(userId: number): Promise<TrashItem[]> {
-  const result = await pool.query(
-    `SELECT * FROM "Trash" WHERE "userId" = $1 ORDER BY "createdAt" DESC`,
-    [userId]
-  );
-  return result.rows;
+  const items = await prisma.trash.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' }
+  });
+  return items.map((t: any) => ({
+    ...t,
+    createdAt: t.createdAt.toISOString(),
+  })) as TrashItem[];
 }
 
-// Get all trash if user is admin
 export async function getAllTrash(): Promise<TrashItem[]> {
-  const result = await pool.query(
-    `SELECT * FROM "Trash" ORDER BY "createdAt" DESC`
-  );
-  return result.rows;
+  const items = await prisma.trash.findMany({
+    orderBy: { createdAt: 'desc' }
+  });
+  return items.map((t: any) => ({
+    ...t,
+    createdAt: t.createdAt.toISOString()
+  })) as TrashItem[];
 }
 
 export async function restoreFromTrash(trashId: number): Promise<void> {
-  // 1. Fetch the trash item
-  const trashRes = await pool.query(`SELECT * FROM "Trash" WHERE "id" = $1`, [
-    trashId,
-  ]);
-  const item = trashRes.rows[0];
+  const item = await prisma.trash.findUnique({ where: { id: trashId } });
 
   if (!item) {
     throw new Error("Trash item not found");
   }
 
   const { entityType, entityData } = item;
+  const data: any = entityData;
 
-  // 2. Re-insert based on entity type. Since we store complete JSON snapshots,
-  // we just pull the fields we need. For relationships like `_AssigneeTasks` or `_TeamMembers`,
-  // we rebuild them after insertion.
   try {
     switch (entityType) {
       case "Employee":
-        await pool.query(
-          `INSERT INTO "Employee" (
-             "id", "firstName", "lastName", "email", "password", "role", 
-             "code", "department", "location", "shift", "address", "city", 
-             "stateRegion", "country", "zip", "phone", "hireDate", 
-             "workType", "billingType", "employeeRate", "employeeCurrency", 
-             "billingRateType", "billingCurrency", "billingStart", "billingEnd"
-           ) VALUES (
-             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, 
-             $19, $20, $21, $22, $23, $24, $25
-           )`,
-          [
-            entityData.id,
-            entityData.firstName,
-            entityData.lastName,
-            entityData.email,
-            entityData.password,
-            entityData.role,
-            entityData.code,
-            entityData.department,
-            entityData.location,
-            entityData.shift,
-            entityData.address,
-            entityData.city,
-            entityData.stateRegion,
-            entityData.country,
-            entityData.zip,
-            entityData.phone,
-            entityData.hireDate,
-            entityData.workType,
-            entityData.billingType,
-            entityData.employeeRate,
-            entityData.employeeCurrency,
-            entityData.billingRateType,
-            entityData.billingCurrency,
-            entityData.billingStart,
-            entityData.billingEnd,
-          ]
-        );
+        await prisma.employee.create({
+          data: {
+            id: data.id,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            password: data.password,
+            role: data.role,
+            code: data.code,
+            department: data.department,
+            departmentId: data.departmentId,
+            location: data.location,
+            shift: data.shift,
+            address: data.address,
+            city: data.city,
+            stateRegion: data.stateRegion,
+            country: data.country,
+            zip: data.zip,
+            phone: data.phone,
+            hireDate: data.hireDate,
+            workType: data.workType,
+            billingType: data.billingType,
+            employeeRate: data.employeeRate,
+            employeeCurrency: data.employeeCurrency,
+            billingRateType: data.billingRateType,
+            billingCurrency: data.billingCurrency,
+            billingStart: data.billingStart,
+            billingEnd: data.billingEnd
+          } as any
+        });
         break;
 
       case "Client":
-        await pool.query(
-          `INSERT INTO "Client" (
-             "id", "name", "nickname", "email", "country", "address", "city", 
-             "stateRegion", "zip", "contactNumber", "defaultRate", "fixedBidMode", "status"
-           ) VALUES (
-             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-           )`,
-          [
-            entityData.id,
-            entityData.name,
-            entityData.nickname,
-            entityData.email,
-            entityData.country,
-            entityData.address,
-            entityData.city,
-            entityData.stateRegion,
-            entityData.zip,
-            entityData.contactNumber,
-            entityData.defaultRate,
-            entityData.fixedBidMode,
-            entityData.status,
-          ]
-        );
+        await prisma.client.create({
+          data: {
+            id: data.id,
+            name: data.name,
+            nickname: data.nickname,
+            email: data.email,
+            country: data.country,
+            address: data.address,
+            city: data.city,
+            stateRegion: data.stateRegion,
+            zip: data.zip,
+            contactNumber: data.contactNumber,
+            defaultRate: data.defaultRate,
+            fixedBidMode: data.fixedBidMode || false,
+            status: data.status
+          } as any
+        });
         break;
 
       case "Project":
-        await pool.query(
-          `INSERT INTO "Project" (
-             "id", "name", "code", "clientId", "clientName", "teamLeadId", 
-             "managerId", "defaultBillingRate", "billingType", "fixedCost", 
-             "startDate", "endDate", "invoiceFileName", "description", 
-             "duration", "estimatedCost", "status"
-           ) VALUES (
-             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
-           )`,
-          [
-            entityData.id,
-            entityData.name,
-            entityData.code,
-            entityData.clientId,
-            entityData.clientName,
-            entityData.teamLeadId,
-            entityData.managerId,
-            entityData.defaultBillingRate,
-            entityData.billingType,
-            entityData.fixedCost,
-            entityData.startDate,
-            entityData.endDate,
-            entityData.invoiceFileName,
-            entityData.description,
-            entityData.duration,
-            entityData.estimatedCost,
-            entityData.status,
-          ]
-        );
-
-        if (entityData.teamMemberIds && entityData.teamMemberIds.length > 0) {
-          for (const empId of entityData.teamMemberIds) {
-            await pool.query(
-              'INSERT INTO "_TeamMembers" ("A", "B") VALUES ($1, $2) ON CONFLICT DO NOTHING',
-              [empId, entityData.id]
-            );
-          }
-        }
+        await prisma.project.create({
+          data: {
+            id: data.id,
+            name: data.name,
+            code: data.code,
+            clientId: data.clientId,
+            clientName: data.clientName,
+            teamLeadId: data.teamLeadId,
+            managerId: data.managerId,
+            defaultBillingRate: data.defaultBillingRate,
+            billingType: data.billingType,
+            fixedCost: data.fixedCost,
+            startDate: data.startDate,
+            endDate: data.endDate,
+            invoiceFileName: data.invoiceFileName,
+            description: data.description,
+            duration: data.duration,
+            estimatedCost: data.estimatedCost,
+            status: data.status,
+            Employee_TeamMembers: {
+              connect: (data.teamMemberIds || []).map((id: number) => ({ id }))
+            }
+          } as any
+        });
         break;
 
       case "Task":
-        await pool.query(
-          `INSERT INTO "Task" (
-             "id", "projectId", "projectName", "name", "workedHours", 
-             "startDate", "dueDate", "reportedTo", "status", "description", "billingType"
-           ) VALUES (
-             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-           )`,
-          [
-            entityData.id,
-            entityData.projectId,
-            entityData.projectName,
-            entityData.name,
-            entityData.workedHours,
-            entityData.date, // mapped back to startDate
-            entityData.dueDate,
-            entityData.reportedTo,
-            entityData.status,
-            entityData.description,
-            entityData.billingType,
-          ]
-        );
-
-        if (entityData.assigneeIds && entityData.assigneeIds.length > 0) {
-          for (const empId of entityData.assigneeIds) {
-            await pool.query(
-              'INSERT INTO "_AssigneeTasks" ("A", "B") VALUES ($1, $2) ON CONFLICT DO NOTHING',
-              [empId, entityData.id]
-            );
-          }
-        }
+        await prisma.task.create({
+          data: {
+            id: data.id,
+            projectId: data.projectId,
+            projectName: data.projectName,
+            name: data.name,
+            workedHours: data.workedHours,
+            startDate: data.startDate || data.date,
+            dueDate: data.dueDate,
+            reportedTo: data.reportedTo,
+            status: data.status,
+            description: data.description,
+            billingType: data.billingType,
+            Employee: {
+              connect: (data.assigneeIds || []).map((id: number) => ({ id }))
+            }
+          } as any
+        });
         break;
 
       default:
         throw new Error("Unknown entity type");
     }
 
-    // 3. Remove from Trash
     await hardDeleteTrash(trashId);
   } catch (err: any) {
-    if (err.code === "23505") { // unique violation
+    if (err.code === "P2002") { // unique violation in Prisma
       throw new Error(`Failed to restore: An item with the same identifier already exists.`);
     }
     throw new Error(`Restore failed: ${err.message}`);
@@ -215,12 +175,17 @@ export async function restoreFromTrash(trashId: number): Promise<void> {
 }
 
 export async function hardDeleteTrash(trashId: number): Promise<void> {
-  await pool.query(`DELETE FROM "Trash" WHERE "id" = $1`, [trashId]);
+  await prisma.trash.delete({ where: { id: trashId } });
 }
 
 export async function cleanupTrash(): Promise<void> {
-  // Delete everything older than 30 days
-  await pool.query(
-    `DELETE FROM "Trash" WHERE "createdAt" < NOW() - INTERVAL '30 days'`
-  );
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  await prisma.trash.deleteMany({
+    where: {
+      createdAt: { lt: thirtyDaysAgo }
+    }
+  });
 }
+

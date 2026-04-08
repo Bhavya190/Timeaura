@@ -1,42 +1,40 @@
-import pool from "./db";
+import prisma from "./db";
 import type { Notification } from "@/types";
 
 export async function getNotifications(userId: number): Promise<Notification[]> {
-    const result = await pool.query(
-        'SELECT * FROM "Notification" WHERE "userId" = $1 ORDER BY "createdAt" DESC',
-        [userId]
-    );
-    return result.rows;
+    const notifications = await prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' }
+    });
+    return notifications as unknown as Notification[];
 }
 
 export async function addNotification(userId: number, message: string): Promise<Notification> {
-    const result = await pool.query(
-        'INSERT INTO "Notification" ("userId", "message") VALUES ($1, $2) RETURNING *',
-        [userId, message]
-    );
-    return result.rows[0];
+    const created = await prisma.notification.create({
+        data: { userId, message }
+    });
+    return created as unknown as Notification;
 }
 
 export async function markNotificationRead(id: number): Promise<Notification> {
-    const result = await pool.query(
-        'UPDATE "Notification" SET "isRead" = true WHERE "id" = $1 RETURNING *',
-        [id]
-    );
-    return result.rows[0];
+    const updated = await prisma.notification.update({
+        where: { id },
+        data: { isRead: true }
+    });
+    return updated as unknown as Notification;
 }
 
 export async function markAllNotificationsRead(userId: number): Promise<void> {
-    await pool.query(
-        'UPDATE "Notification" SET "isRead" = true WHERE "userId" = $1 AND "isRead" = false',
-        [userId]
-    );
+    await prisma.notification.updateMany({
+        where: { userId, isRead: false },
+        data: { isRead: true }
+    });
 }
 
 export async function getAdminUserIds(): Promise<number[]> {
-    // Returns IDs of all users with role 'admin' or 'teamLead'
-    const result = await pool.query(
-        'SELECT id FROM "Employee" WHERE "role" IN ($1, $2)',
-        ['admin', 'teamLead']
-    );
-    return result.rows.map((row) => row.id);
+    const users = await prisma.employee.findMany({
+        where: { role: { in: ['admin', 'teamLead'] } },
+        select: { id: true }
+    });
+    return users.map((row: any) => row.id);
 }

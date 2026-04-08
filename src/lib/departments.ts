@@ -1,44 +1,54 @@
-import pool from "./db";
+import prisma from "./db";
 import { Department } from "@/types";
 
 export async function getDepartments(): Promise<Department[]> {
-    const result = await pool.query(`
-        SELECT d.*, COUNT(e.id)::int as "employeeCount"
-        FROM "Department" d
-        LEFT JOIN "Employee" e ON d.id = e."departmentId"
-        GROUP BY d.id
-        ORDER BY d.name ASC
-    `);
-    return result.rows;
+    const departments = await prisma.department.findMany({
+        include: { _count: { select: { Employee: true } } },
+        orderBy: { name: 'asc' }
+    });
+    return departments.map((d: any) => ({
+        ...d,
+        employeeCount: d._count.Employee
+    } as unknown as Department));
 }
 
 export async function getDepartmentById(id: number): Promise<Department | null> {
-    const result = await pool.query('SELECT * FROM "Department" WHERE id = $1', [id]);
-    if (result.rows.length === 0) return null;
-    return result.rows[0];
+    const department = await prisma.department.findUnique({ where: { id } });
+    if (!department) return null;
+    return department as unknown as Department;
 }
 
 export async function createDepartment(data: { name: string; description?: string }): Promise<Department> {
-    const result = await pool.query(
-        'INSERT INTO "Department" (name, description) VALUES ($1, $2) RETURNING *',
-        [data.name, data.description || null]
-    );
-    return result.rows[0];
+    const created = await prisma.department.create({
+        data: {
+            name: data.name,
+            description: data.description || null as any
+        }
+    });
+    return created as unknown as Department;
 }
 
 export async function updateDepartment(id: number, data: { name: string; description?: string }): Promise<Department> {
-    const result = await pool.query(
-        'UPDATE "Department" SET name = $1, description = $2, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
-        [data.name, data.description || null, id]
-    );
-    return result.rows[0];
+    const updated = await prisma.department.update({
+        where: { id },
+        data: {
+            name: data.name,
+            description: data.description || null as any,
+            updatedAt: new Date()
+        }
+    });
+    return updated as unknown as Department;
 }
 
 export async function deleteDepartment(id: number): Promise<void> {
-    await pool.query('DELETE FROM "Department" WHERE id = $1', [id]);
+    await prisma.department.delete({ where: { id } });
 }
 
 export async function getDepartmentEmployees(departmentId: number) {
-    const result = await pool.query('SELECT id, firstName, lastName, email, role, code FROM "Employee" WHERE "departmentId" = $1', [departmentId]);
-    return result.rows;
+    const employees = await prisma.employee.findMany({
+        where: { departmentId },
+        select: { id: true, firstName: true, lastName: true, email: true, role: true, code: true }
+    });
+    return employees;
 }
+
