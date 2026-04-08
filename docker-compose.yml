@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: timeaura_user
-      POSTGRES_PASSWORD: Time$Aura@TF123!
+      POSTGRES_PASSWORD: timeaura_pass
       POSTGRES_DB: timeaura_db
     ports:
       - "5434:5432"
