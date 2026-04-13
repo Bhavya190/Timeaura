@@ -76,6 +76,12 @@ model Employee {
   billingStart                         String?
   billingEnd                           String?
   avatarUrl                            String?
+  middleName                           String?
+  terminationDate                      String?
+  status                               String?        @default("Active")
+  emailNotifications                   Boolean?       @default(true)
+  weeklyReport                         Boolean?       @default(true)
+  securityAlerts                       Boolean?       @default(true)
   createdAt                            DateTime       @default(now()) @db.Timestamp(6)
   updatedAt                            DateTime       @default(now()) @db.Timestamp(6)
   DailyTime                            DailyTime[]
