@@ -8,6 +8,11 @@ RUN npm ci
 # Build the application
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
+ARG DATABASE_URL
+ARG NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+ENV DATABASE_URL=$DATABASE_URL
+ENV NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=$NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Generate Prisma client BEFORE build
@@ -30,10 +35,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
 # Copy ALL production node_modules (includes bcryptjs, Prisma, etc.)
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 EXPOSE 3000
-CMD ["/bin/sh", "-c", "node scripts/init-db.js && node server.js"]
+CMD ["/bin/sh", "-c", "node server.js"]
